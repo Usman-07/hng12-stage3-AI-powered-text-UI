@@ -449,7 +449,7 @@ import { Search, Send, Languages, Menu, X, Plus, Loader2 } from 'lucide-react';
             <div className="flex-1 overflow-y-auto">
               {conversations
                 .filter(conv => conv.title.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map(conversation => (
+                .map((conversation, index) => (
                   <div key={conversation.id}
                        onClick={() => {
                          setActiveConversationId(conversation.id);
@@ -459,7 +459,7 @@ import { Search, Send, Languages, Menu, X, Plus, Loader2 } from 'lucide-react';
                        className={`flex items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 
                                  transition-colors ${activeConversationId === conversation.id ? 'bg-[#373F68]/10' : ''}`}>
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-800">{conversation.title}</h3>
+                      <h3 className="font-medium text-gray-800">Conversation {index + 1}</h3>
                       <p className="text-sm text-gray-500">{conversation.timestamp}</p>
                     </div>
                     <Languages className="text-gray-400 w-4 h-4" />
@@ -517,7 +517,7 @@ import { Search, Send, Languages, Menu, X, Plus, Loader2 } from 'lucide-react';
                       rows="3"
                     />
                     <span className="absolute bottom-2 right-2 text-xs text-gray-500">
-                      Characters: {inputText.length}
+                      Number of Characters: {inputText.length}
                     </span>
                   </div>
     
