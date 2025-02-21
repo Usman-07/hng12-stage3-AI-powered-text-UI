@@ -757,7 +757,12 @@
     //                 </p>
     //               </div>
     //             )}
-    
+  //   <div className="flex flex-col items-center justify-center h-full">
+  //   <h2 className="text-3xl font-bold text-gray-400 mb-4">AI Powered Text Translation</h2>
+  //   <p className=" text-3xl font-bold text-[#C75AF6]/70">
+  //     {text}<span className="animate-pulse ">|</span>
+  //   </p>
+  // </div>
     //             {translation && (
     //               <div className="p-4 bg-gray-50 rounded-lg">
     //                 <h2 className="text-xl font-semibold mb-2">🌍 Translation</h2>
@@ -773,27 +778,77 @@
     
     // export default App;
 
-   
-    import React, { useState, useEffect, useRef, useCallback } from 'react';
+    import React, { useState, useEffect, useRef } from 'react';
     import { Search, Send, Languages, Menu, X, Plus, Loader2 } from 'lucide-react';
     
     const STORAGE_KEY = 'translation_history';
+    const SUMMARY_THRESHOLD = 150; // Define threshold for summarization
     
+    // Standalone TypewriterText component
+    const TypewriterText = () => {
+      const [text, setText] = useState('');
+      const [phraseIndex, setPhrseIndex] = useState(0);
+      const [isDeleting, setIsDeleting] = useState(false);
+      
+      const phrases = [
+        'Start a new translation',
+        'Summarize text over 150 characters',
+        'Detect language automatically'
+      ];
+    
+      useEffect(() => {
+        const typingSpeed = 100;
+        const deletingSpeed = 50;
+        const pauseTime = 2000;
+    
+        const timer = setTimeout(() => {
+          const currentPhrase = phrases[phraseIndex];
+          
+          if (isDeleting) {
+            setText(prev => prev.slice(0, -1));
+            if (text === '') {
+              setIsDeleting(false);
+              setPhrseIndex((prev) => (prev + 1) % phrases.length);
+            }
+          } else {
+            setText(currentPhrase.slice(0, text.length + 1));
+            if (text === currentPhrase) {
+              setTimeout(() => setIsDeleting(true), pauseTime);
+            }
+          }
+        }, isDeleting ? deletingSpeed : typingSpeed);
+    
+        return () => clearTimeout(timer);
+      }, [text, isDeleting, phraseIndex, phrases]); // Added phrases to dependency array
+    
+      return (
+        <div className="flex flex-col items-center justify-center h-full">
+          <h2 className="text-3xl font-bold text-gray-400 mb-4">AI Powered Text Translation</h2>
+          <p className="text-3xl font-bold text-[#C75AF6]/70">
+            {text}<span className="animate-pulse">|</span>
+          </p>
+        </div>
+      );
+    };
+    
+    // Main App component
     const App = () => {
+      // State
       const [inputText, setInputText] = useState('');
       const [isProcessing, setIsProcessing] = useState(false);
       const [searchQuery, setSearchQuery] = useState('');
       const [isSidebarOpen, setIsSidebarOpen] = useState(false);
       const [targetLanguage, setTargetLanguage] = useState('es');
       const [detector, setDetector] = useState(null);
-      const [translator, setTranslator] = useState(null);
-      const [activeConversationId, setActiveConversationId] = useState(null);
       const [conversations, setConversations] = useState([]);
+      const [activeConversationId, setActiveConversationId] = useState(null);
       const [progress, setProgress] = useState(0);
     
+      // Refs
       const messagesEndRef = useRef(null);
       const sidebarRef = useRef(null);
     
+      // Available languages
       const availableLanguages = [
         { code: 'es', name: 'Spanish' },
         { code: 'fr', name: 'French' },
@@ -806,37 +861,36 @@
         { code: 'ru', name: 'Russian' }
       ];
     
-      // Initialize AI APIs
+      // Helper function to get language name from code
+      const getLanguageName = (code) => {
+        return availableLanguages.find(lang => lang.code === code)?.name || code;
+      };
+    
+      // Initialize AI
       useEffect(() => {
         const initializeAI = async () => {
           try {
             if (!('ai' in window)) {
               throw new Error('Chrome AI APIs are not available in this browser.');
             }
-    
             const progressMonitor = {
               monitor: (m) => {
                 m.addEventListener('downloadprogress', (e) => {
-                  const progressPercent = Math.round((e.loaded / e.total) * 100);
-                  setProgress(progressPercent);
+                  setProgress(Math.round((e.loaded / e.total) * 100));
                 });
               }
             };
-    
             const newDetector = await window.ai.languageDetector.create(progressMonitor);
             await newDetector.ready;
             setDetector(newDetector);
-    
-            console.log('AI APIs initialized successfully');
           } catch (error) {
             console.error('Error initializing AI APIs:', error);
           }
         };
-    
         initializeAI();
       }, []);
     
-      // Load conversations from localStorage
+      // Load conversations
       useEffect(() => {
         const savedConversations = localStorage.getItem(STORAGE_KEY);
         if (savedConversations) {
@@ -848,271 +902,29 @@
         }
       }, []);
     
-      // Save conversations to localStorage
+      // Save conversations
       useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
       }, [conversations]);
     
-      // Scroll to bottom when messages change
+      // Scroll to bottom
       useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, [conversations]);
     
-      // Click outside handler for sidebar
-      useEffect(() => {
-        const handleClickOutside = (event) => {
-          if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-            setIsSidebarOpen(false);
-          }
-        };
-    
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-      }, []);
-    
-      // Check language pair availability
-      const checkLanguagePairAvailability = async (sourceLanguage, targetLanguage) => {
-        try {
-          const translatorCapabilities = await window.ai.translator.capabilities();
-          const availability = await translatorCapabilities.languagePairAvailable(
-            sourceLanguage,
-            targetLanguage
-          );
-          
-          if (availability === 'no') {
-            throw new Error(`Translation from ${sourceLanguage} to ${targetLanguage} is not supported`);
-          }
-          return availability;
-        } catch (error) {
-          throw new Error(`Failed to check language pair availability: ${error.message}`);
-        }
-      };
-    
-      const createNewChat = () => {
-        const newConversation = {
-          id: Date.now(),
-          title: `${availableLanguages.find(lang => lang.code === targetLanguage)?.name} Translation`,
-          timestamp: new Date().toLocaleString(),
-          messages: [],
-          language: targetLanguage
-        };
-        
-        setConversations(prev => [newConversation, ...prev]);
-        setActiveConversationId(newConversation.id);
-        setIsSidebarOpen(false);
-      };
-    
+      // Get active conversation
       const activeConversation = conversations.find(conv => conv.id === activeConversationId);
     
-      const addMessageToConversation = (conversationId, message) => {
-        setConversations(prev => prev.map(conv => {
-          if (conv.id === conversationId) {
-            return {
-              ...conv,
-              messages: [...conv.messages, message],
-              timestamp: new Date().toLocaleString()
-            };
-          }
-          return conv;
-        }));
-      };
-    
-      // Summarization function
-      const handleSummarize = async (text) => {
-        try {
-          const summarizer = await window.ai.summarizer.create({
-            monitor: (m) => {
-              m.addEventListener('downloadprogress', (e) => {
-                const progressPercent = Math.round((e.loaded / e.total) * 100);
-                setProgress(progressPercent);
-              });
-            },
-            sharedContext: "This is a text passage",
-            type: "key-points",
-            format: "markdown",
-            length: "medium",
-          });
-    
-          await summarizer.ready;
-    
-          const resultStream = await summarizer.summarize(text, {
-            context: "Summarizing the provided text.",
-          });
-    
-          let result = "";
-          let previousChunk = "";
-    
-          for await (const chunk of resultStream) {
-            const newChunk = chunk.startsWith(previousChunk)
-              ? chunk.slice(previousChunk.length)
-              : chunk;
-            result += newChunk;
-            previousChunk = chunk;
-          }
-    
-          return result;
-        } catch (error) {
-          throw new Error(`Summarization failed: ${error.message}`);
-        }
-      };
-    
-      async function handleSendMessage() {
-        if (!inputText.trim() || isProcessing || !activeConversationId) return;
-    
-        setIsProcessing(true);
-        
-        // Add user message
-        const userMessage = {
-          id: Date.now(),
-          text: inputText.trim(),
-          sender: 'user',
-          timestamp: new Date().toLocaleTimeString()
-        };
-        
-        addMessageToConversation(activeConversationId, userMessage);
-        setInputText('');
-    
-        try {
-          // Language detection
-          const detectingMessage = {
-            id: Date.now() + 1,
-            text: 'Detecting language...',
-            sender: 'ai',
-            timestamp: new Date().toLocaleTimeString(),
-            isTyping: true
-          };
-          
-          addMessageToConversation(activeConversationId, detectingMessage);
-    
-          const detectionResult = await detector.detect(userMessage.text);
-          const detectedLanguage = detectionResult[0]?.detectedLanguage || 'unknown';
-          const confidence = detectionResult[0]?.confidence || 0;
-    
-          // Update detecting message
-          setConversations(prev => prev.map(conv => {
-            if (conv.id === activeConversationId) {
-              return {
-                ...conv,
-                messages: conv.messages.map(msg => 
-                  msg.id === detectingMessage.id
-                    ? {
-                        ...msg,
-                        text: `Detected language: ${detectedLanguage.toUpperCase()} (Confidence: ${(confidence * 100).toFixed(1)}%)`,
-                        isTyping: false
-                      }
-                    : msg
-                )
-              };
-            }
-            return conv;
-          }));
-    
-          // Check if summarization is needed (>150 characters)
-          if (userMessage.text.length > 150) {
-            const summarizingMessage = {
-              id: Date.now() + 2,
-              text: 'Generating summary...',
-              sender: 'ai',
-              timestamp: new Date().toLocaleTimeString(),
-              isTyping: true
-            };
-            
-            addMessageToConversation(activeConversationId, summarizingMessage);
-    
-            const summary = await handleSummarize(userMessage.text);
-            
-            setConversations(prev => prev.map(conv => {
-              if (conv.id === activeConversationId) {
-                return {
-                  ...conv,
-                  messages: conv.messages.map(msg =>
-                    msg.id === summarizingMessage.id
-                      ? {
-                          ...msg,
-                          text: `Summary:\n${summary}`,
-                          isTyping: false
-                        }
-                      : msg
-                  )
-                };
-              }
-              return conv;
-            }));
-          }
-    
-          // Translation
-          const translatingMessage = {
-            id: Date.now() + 3,
-            text: 'Translating...',
-            sender: 'ai',
-            timestamp: new Date().toLocaleTimeString(),
-            isTyping: true
-          };
-          
-          addMessageToConversation(activeConversationId, translatingMessage);
-    
-          // Check language pair availability
-          await checkLanguagePairAvailability(detectedLanguage, targetLanguage);
-    
-          // Create translator
-          const translator = await window.ai.translator.create({
-            monitor: (m) => {
-              m.addEventListener('downloadprogress', (e) => {
-                const progressPercent = Math.round((e.loaded / e.total) * 100);
-                setProgress(progressPercent);
-              });
-            },
-            sourceLanguage: detectedLanguage,
-            targetLanguage: targetLanguage,
-          });
-    
-          await translator.ready;
-          const translatedText = await translator.translate(userMessage.text);
-    
-          // Update translating message
-          setConversations(prev => prev.map(conv => {
-            if (conv.id === activeConversationId) {
-              return {
-                ...conv,
-                messages: conv.messages.map(msg =>
-                  msg.id === translatingMessage.id
-                    ? {
-                        ...msg,
-                        text: `Translation (${detectedLanguage} → ${targetLanguage}):\n${translatedText}`,
-                        isTyping: false
-                      }
-                    : msg
-                )
-              };
-            }
-            return conv;
-          }));
-    
-        } catch (error) {
-          addMessageToConversation(activeConversationId, {
-            id: Date.now() + 4,
-            text: `Error: ${error.message}`,
-            sender: 'ai',
-            timestamp: new Date().toLocaleTimeString(),
-            isError: true
-          });
-        } finally {
-          setIsProcessing(false);
-          setProgress(0);
-        }
-      }
-    
+      // Message bubble component
       const MessageBubble = ({ message }) => (
         <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-          <div
-            className={`max-w-[85%] md:max-w-xl px-4 py-2 rounded-lg ${
-              message.sender === 'user'
-                ? 'bg-[#C75AF6] text-white'
-                : message.isError
-                ? 'bg-red-100 text-red-700'
-                : 'bg-gray-100 text-gray-800'
-            }`}
-          >
+          <div className={`max-w-[85%] md:max-w-xl px-4 py-2 rounded-lg ${
+            message.sender === 'user'
+              ? 'bg-[#C75AF6] text-white'
+              : message.isError
+              ? 'bg-red-100 text-red-700'
+              : 'bg-gray-100 text-gray-800'
+          }`}>
             {message.isTyping ? (
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce" />
@@ -1122,54 +934,171 @@
             ) : (
               <>
                 <p className="break-words whitespace-pre-wrap">{message.text}</p>
-                <span className="text-xs opacity-50 mt-1 block">
-                  {message.timestamp}
-                </span>
+                {message.sender === 'user' && message.detectedLanguage && (
+                  <p className="text-xs text-white/80 mt-1">
+                    {message.detectedLanguage} (Confidence: {message.confidence}%)
+                  </p>
+                )}
+                <span className="text-xs opacity-50 mt-1 block">{message.timestamp}</span>
               </>
             )}
           </div>
         </div>
       );
     
+      // Create new chat
+      const createNewChat = () => {
+        const newConversation = {
+          id: Date.now(),
+          title: `${getLanguageName(targetLanguage)} Translation`,
+          timestamp: new Date().toLocaleString(),
+          messages: [],
+          language: targetLanguage
+        };
+        setConversations(prev => [newConversation, ...prev]);
+        setActiveConversationId(newConversation.id);
+        setIsSidebarOpen(false);
+      };
+    
+      // Handle send message
+      const handleSendMessage = async () => {
+        if (!inputText.trim() || isProcessing || !activeConversationId) return;
+        setIsProcessing(true);
+        
+        try {
+          const detectionResult = await detector.detect(inputText.trim());
+          const detectedLanguage = detectionResult[0]?.detectedLanguage || 'unknown';
+          const confidence = detectionResult[0]?.confidence || 0;
+          const shouldSummarize = inputText.length > SUMMARY_THRESHOLD;
+    
+          const userMessage = {
+            id: Date.now(),
+            text: inputText.trim(),
+            sender: 'user',
+            timestamp: new Date().toLocaleTimeString(),
+            detectedLanguage: detectedLanguage.charAt(0).toUpperCase() + detectedLanguage.slice(1),
+            confidence: (confidence * 100).toFixed(1)
+          };
+    
+          setConversations(prev => prev.map(conv => {
+            if (conv.id === activeConversationId) {
+              return {
+                ...conv,
+                messages: [...conv.messages, userMessage],
+                timestamp: new Date().toLocaleString()
+              };
+            }
+            return conv;
+          }));
+    
+          setInputText('');
+    
+          const translator = await window.ai.translator.create({
+            sourceLanguage: detectedLanguage,
+            targetLanguage
+          });
+    
+          await translator.ready;
+          
+          // Add typing indicator
+          setConversations(prev => prev.map(conv => {
+            if (conv.id === activeConversationId) {
+              return {
+                ...conv,
+                messages: [...conv.messages, {
+                  id: Date.now() + 0.5,
+                  isTyping: true,
+                  sender: 'ai',
+                  timestamp: new Date().toLocaleTimeString()
+                }]
+              };
+            }
+            return conv;
+          }));
+          
+          let translatedText = await translator.translate(userMessage.text);
+          
+          // Handle summarization for long texts if needed
+          if (shouldSummarize) {
+            try {
+              // You would implement AI summarization here
+              // This is a placeholder - in a real app, you'd use an AI service
+              if (translatedText.length > SUMMARY_THRESHOLD * 0.8) {
+                translatedText = `[Summary] ${translatedText.substring(0, SUMMARY_THRESHOLD)}... (full translation available)`;
+              }
+            } catch (summaryError) {
+              console.error('Summary error:', summaryError);
+              // Continue with just translation if summarization fails
+            }
+          }
+    
+          // Remove typing indicator and add real response
+          setConversations(prev => prev.map(conv => {
+            if (conv.id === activeConversationId) {
+              const messages = conv.messages.filter(msg => !msg.isTyping);
+              return {
+                ...conv,
+                messages: [...messages, {
+                  id: Date.now() + 1,
+                  text: `Translation (${userMessage.detectedLanguage} → ${getLanguageName(targetLanguage)}):\n${translatedText}`,
+                  sender: 'ai',
+                  timestamp: new Date().toLocaleTimeString()
+                }]
+              };
+            }
+            return conv;
+          }));
+    
+        } catch (error) {
+          // Remove typing indicator if exists
+          setConversations(prev => prev.map(conv => {
+            if (conv.id === activeConversationId) {
+              const messages = conv.messages.filter(msg => !msg.isTyping);
+              return {
+                ...conv,
+                messages: [...messages, {
+                  id: Date.now() + 2,
+                  text: `Error: ${error.message}`,
+                  sender: 'ai',
+                  timestamp: new Date().toLocaleTimeString(),
+                  isError: true
+                }]
+              };
+            }
+            return conv;
+          }));
+        } finally {
+          setIsProcessing(false);
+          setProgress(0);
+        }
+      };
+    
       return (
         <div className="flex h-screen bg-gray-100 relative">
-
           {isSidebarOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-20 z-20 md:hidden" 
                  onClick={() => setIsSidebarOpen(false)} />
           )}
     
-          <div 
-            ref={sidebarRef}
-            className={`
-              fixed md:static
-              inset-y-0 left-0
-              w-72 md:w-80
-              bg-white
-              border-r border-gray-200
-              transform transition-transform duration-300 ease-in-out
-              ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-              z-30
-              flex flex-col
-            `}
-          >
+          <div ref={sidebarRef}
+               className={`fixed md:static inset-y-0 left-0 w-72 md:w-80 bg-white border-r border-gray-200
+                          transform transition-transform duration-300 ease-in-out
+                          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                          z-30 flex flex-col`}>
             <div className="p-4 border-b border-gray-200">
-              <button 
-                onClick={createNewChat}
-                className="w-full mb-4 p-2 flex items-center justify-center gap-2 bg-[#C75AF6] text-white rounded-lg hover:bg-[#C75AF6]/90 transition-colors"
-              >
+              <button onClick={createNewChat}
+                      className="w-full mb-4 p-2 flex items-center justify-center gap-2 bg-[#C75AF6] text-white 
+                               rounded-lg hover:bg-[#C75AF6]/90 transition-colors">
                 <Plus className="w-5 h-5" />
                 New Translation
               </button>
               
               <div className="relative">
-                <input 
-                  type="text" 
-                  value={searchQuery} 
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search conversations"
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C75AF6]"
-                />
+                <input type="text" 
+                       value={searchQuery}
+                       onChange={(e) => setSearchQuery(e.target.value)}
+                       placeholder="Search conversations"
+                       className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C75AF6]" />
                 <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
               </div>
             </div>
@@ -1178,16 +1107,13 @@
               {conversations
                 .filter(conv => conv.title.toLowerCase().includes(searchQuery.toLowerCase()))
                 .map(conversation => (
-                  <div
-                    key={conversation.id}
-                    onClick={() => {
-                      setActiveConversationId(conversation.id);
-                      setIsSidebarOpen(false);
-                    }}
-                    className={`flex items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      activeConversationId === conversation.id ? 'bg-[#C75AF6]/10' : ''
-                    }`}
-                  >
+                  <div key={conversation.id}
+                       onClick={() => {
+                         setActiveConversationId(conversation.id);
+                         setIsSidebarOpen(false);
+                       }}
+                       className={`flex items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 
+                                 transition-colors ${activeConversationId === conversation.id ? 'bg-[#C75AF6]/10' : ''}`}>
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-800">{conversation.title}</h3>
                       <p className="text-sm text-gray-500">{conversation.timestamp}</p>
@@ -1198,86 +1124,100 @@
             </div>
           </div>
     
-       {/* Main Content */}
-      <div className="flex-1 flex flex-col bg-white">
-        {/* Mobile Header */}
-        <div className="md:hidden flex items-center p-4 border-b border-gray-200">
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-1 hover:bg-gray-100 rounded-lg"
-          >
-            {isSidebarOpen ? (
-              <X className="w-6 h-6 text-gray-600" />
-            ) : (
-              <Menu className="w-6 h-6 text-gray-600" />
-            )}
-          </button>
-          <span className="ml-4 font-medium text-gray-800">
-            {activeConversation?.title || 'Select a conversation'}
-          </span>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {activeConversation?.messages.map(message => (
-            <MessageBubble key={message.id} message={message} />
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Area */}
-        <div className="border-t border-gray-200 p-4">
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-start space-x-2">
-              <textarea
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                placeholder={activeConversationId ? "Type text to translate..." : "Select a conversation to start"}
-                className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-y-auto max-h-40"
-                disabled={isProcessing || !activeConversationId}
-                rows="3"
-              />
-              <div className="flex flex-col space-y-2">
-                <select
-                  value={targetLanguage}
-                  onChange={(e) => setTargetLanguage(e.target.value)}
-                  className="w-32 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                >
-                  {availableLanguages.map(lang => (
-                    <option key={lang.code} value={lang.code}>{lang.name}</option>
+          <div className="flex-1 flex flex-col bg-white">
+            <div className="md:hidden flex items-center p-4 border-b border-gray-200">
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                      className="p-1 hover:bg-gray-100 rounded-lg">
+                {isSidebarOpen ? (
+                  <X className="w-6 h-6 text-gray-600" />
+                ) : (
+                  <Menu className="w-6 h-6 text-gray-600" />
+                )}
+              </button>
+              <span className="ml-4 font-medium text-gray-800">
+                {activeConversation?.title || 'Select a conversation'}
+              </span>
+            </div>
+    
+            <div className="flex-1 overflow-y-auto p-4">
+              {activeConversation ? (
+                <>
+                  {activeConversation.messages.map(message => (
+                    <MessageBubble key={message.id} message={message} />
                   ))}
-                </select>
-                <button
-                  onClick={handleSendMessage}
-                  disabled={isProcessing || !inputText.trim() || !activeConversationId}
-                  className={`p-3 rounded-lg w-full flex justify-center items-center ${
-                    isProcessing || !inputText.trim() || !activeConversationId
-                      ? 'bg-gray-300 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white transition-colors`}
-                >
-                  {isProcessing ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      <span className="ml-2">Send</span>
-                    </>
-                  )}
-                </button>
+                  <div ref={messagesEndRef} />
+                </>
+              ) : (
+                <TypewriterText />
+              )}
+            </div>
+    
+            <div className="border-t border-gray-200 p-4">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-start space-x-2">
+                  <div className="flex-1 relative">
+                    <textarea
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder={activeConversationId ? "Type text to translate..." : "Select a conversation to start"}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C75AF6] resize-none overflow-y-auto max-h-40"
+                      disabled={isProcessing || !activeConversationId}
+                      rows="3"
+                    />
+                    <span className="absolute bottom-2 right-2 text-xs text-gray-500">
+                      Characters: {inputText.length}
+                    </span>
+                  </div>
+    
+                  <div className="flex flex-col space-y-2">
+                    <select
+                      value={targetLanguage}
+                      onChange={(e) => setTargetLanguage(e.target.value)}
+                      className="w-32 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C75AF6] bg-white"
+                    >
+                      {availableLanguages.map(lang => (
+                        <option key={lang.code} value={lang.code}>{lang.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={isProcessing || !activeConversationId || !inputText.trim()}
+                      className={`p-3 rounded-lg w-full flex justify-center items-center ${
+                        isProcessing || !activeConversationId || !inputText.trim()
+                          ? 'bg-gray-300 cursor-not-allowed'
+                          : 'bg-[#C75AF6] hover:bg-[#C75AF6]/90'
+                      } text-white transition-colors`}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span className="ml-2">
+                            {progress > 0 ? `${progress}%` : 'Processing...'}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-5 h-5" />
+                          <span className="ml-2">
+                            {inputText.length > SUMMARY_THRESHOLD ? 'Summarize & Translate' : 'Translate'}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-      )
-    }
-
+      );
+    };
+    
     export default App;
+    
