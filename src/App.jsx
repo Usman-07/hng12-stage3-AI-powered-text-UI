@@ -418,10 +418,10 @@ import { Search, Send, Languages, Menu, X, Plus, Loader2 } from 'lucide-react';
     
       return (
         <div className="flex h-screen bg-gray-100 relative">
-          {isSidebarOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-20 z-20 md:hidden" 
-                 onClick={() => setIsSidebarOpen(false)} />
-          )}
+         {isSidebarOpen && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.05)] z-20 md:hidden" 
+        onClick={() => setIsSidebarOpen(false)} />
+      )}
     
           <div ref={sidebarRef}
                className={`fixed md:static inset-y-0 left-0 w-72 md:w-80 bg-white border-r border-gray-200
