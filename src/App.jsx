@@ -488,63 +488,396 @@
     // )}
 
 
-    import React, { useState, useCallback } from 'react';
-    import { AlertCircle, Check, Loader2 } from 'lucide-react';
+    // import React, { useState, useCallback } from 'react';
+    // import { AlertCircle, Check, Loader2 } from 'lucide-react';
     
-    // Simple custom Alert component
-    const Alert = ({ children, variant = 'default' }) => {
-      const bgColor = variant === 'destructive' ? 'bg-red-100' : 'bg-blue-100';
-      const textColor = variant === 'destructive' ? 'text-red-800' : 'text-blue-800';
+    // // Simple custom Alert component
+    // const Alert = ({ children, variant = 'default' }) => {
+    //   const bgColor = variant === 'destructive' ? 'bg-red-100' : 'bg-blue-100';
+    //   const textColor = variant === 'destructive' ? 'text-red-800' : 'text-blue-800';
       
-      return (
-        <div className={`${bgColor} ${textColor} p-4 rounded-lg flex items-center gap-2`}>
-          {children}
-        </div>
-      );
-    };
+    //   return (
+    //     <div className={`${bgColor} ${textColor} p-4 rounded-lg flex items-center gap-2`}>
+    //       {children}
+    //     </div>
+    //   );
+    // };
+    
+    // const App = () => {
+    //   const [text, setText] = useState("");
+    //   const [summary, setSummary] = useState("");
+    //   const [language, setLanguage] = useState(null);
+    //   const [translation, setTranslation] = useState("");
+    //   const [targetLanguage, setTargetLanguage] = useState("en");
+    //   const [isProcessing, setIsProcessing] = useState(false);
+    //   const [progress, setProgress] = useState(0);
+    //   const [error, setError] = useState(null);
+    
+    //   // Check if AI APIs are available
+    //   const checkAISupport = useCallback(() => {
+    //     if (!('ai' in window)) {
+    //       throw new Error('Chrome AI APIs are not available in this browser.');
+    //     }
+    //     return true;
+    //   }, []);
+    
+    //   // Generic progress monitor setup
+    //   const createProgressMonitor = (operation) => ({
+    //     monitor: (m) => {
+    //       m.addEventListener('downloadprogress', (e) => {
+    //         const progressPercent = Math.round((e.loaded / e.total) * 100);
+    //         setProgress(progressPercent);
+    //         console.log(`${operation} model downloading: ${progressPercent}%`);
+    //       });
+    //     }
+    //   });
+    
+    //   // Error handler
+    //   const handleError = (error, operation) => {
+    //     console.error(`Error during ${operation}:`, error);
+    //     setError(`${operation} failed: ${error.message}`);
+    //     setIsProcessing(false);
+    //     setProgress(0);
+    //   };
+    
+    //   // Check language pair availability
+    //   const checkLanguagePairAvailability = async (sourceLanguage, targetLanguage) => {
+    //     try {
+    //       const translatorCapabilities = await window.ai.translator.capabilities();
+    //       const availability = await translatorCapabilities.languagePairAvailable(sourceLanguage, targetLanguage);
+          
+    //       if (availability === 'no') {
+    //         throw new Error(`Translation from ${sourceLanguage} to ${targetLanguage} is not supported`);
+    //       }
+    //       return availability;
+    //     } catch (error) {
+    //       throw new Error(`Failed to check language pair availability: ${error.message}`);
+    //     }
+    //   };
+    
+    //   // Summarization function
+    //   const handleSummarize = async () => {
+    //     setIsProcessing(true);
+    //     setError(null);
+    //     setSummary("");
+    
+    //     try {
+    //       checkAISupport();
+          
+    //       const summarizer = await window.ai.summarizer.create({
+    //         ...createProgressMonitor('Summarizer'),
+    //         sharedContext: "This is a scientific article",
+    //         type: "key-points",
+    //         format: "markdown",
+    //         length: "medium",
+    //       });
+    
+    //       await summarizer.ready;
+    
+    //       const resultStream = await summarizer.summarize(text, {
+    //         context: "This article is intended for a tech-savvy audience.",
+    //       });
+    
+    //       let result = "";
+    //       let previousChunk = "";
+    
+    //       for await (const chunk of resultStream) {
+    //         const newChunk = chunk.startsWith(previousChunk)
+    //           ? chunk.slice(previousChunk.length)
+    //           : chunk;
+    //         result += newChunk;
+    //         previousChunk = chunk;
+    //       }
+    
+    //       setSummary(result);
+    //     } catch (error) {
+    //       handleError(error, 'Summarization');
+    //     } finally {
+    //       setIsProcessing(false);
+    //       setProgress(0);
+    //     }
+    //   };
+    
+    //   // Language detection function
+    //   const detectLanguage = async (textToDetect) => {
+    //     try {
+    //       checkAISupport();
+          
+    //       const detector = await window.ai.languageDetector.create(createProgressMonitor('Language Detector'));
+    //       await detector.ready;
+          
+    //       const results = await detector.detect(textToDetect);
+    //       const topResult = results[0];
+          
+    //       if (!topResult) {
+    //         throw new Error('No language detected');
+    //       }
+          
+    //       return {
+    //         detectedLanguage: topResult.detectedLanguage,
+    //         confidence: topResult.confidence
+    //       };
+    //     } catch (error) {
+    //       throw new Error(`Language detection failed: ${error.message}`);
+    //     }
+    //   };
+    
+    //   // Translation function
+    //   const handleTranslate = async () => {
+    //     if (!text) {
+    //       setError('Please enter text to translate');
+    //       return;
+    //     }
+    
+    //     setIsProcessing(true);
+    //     setError(null);
+    //     setTranslation("");
+    
+    //     try {
+    //       checkAISupport();
+    
+    //       // Detect language first
+    //       const detectedLang = await detectLanguage(text);
+    //       setLanguage(detectedLang);
+    
+    //       // Check if translation is available
+    //       const availability = await checkLanguagePairAvailability(
+    //         detectedLang.detectedLanguage,
+    //         targetLanguage
+    //       );
+    
+    //       const translator = await window.ai.translator.create({
+    //         ...createProgressMonitor('Translator'),
+    //         sourceLanguage: detectedLang.detectedLanguage,
+    //         targetLanguage: targetLanguage,
+    //       });
+    
+    //       await translator.ready;
+    //       const translatedText = await translator.translate(text);
+    //       setTranslation(translatedText);
+    //     } catch (error) {
+    //       handleError(error, 'Translation');
+    //     } finally {
+    //       setIsProcessing(false);
+    //       setProgress(0);
+    //     }
+    //   };
+    
+    //   return (
+    //     <div className="max-w-4xl mx-auto p-6 space-y-6">
+    //       <h1 className="text-3xl font-bold flex items-center gap-2">
+    //         AI Text Processor
+    //       </h1>
+    
+    //       {error && (
+    //         <Alert variant="destructive">
+    //           <AlertCircle className="h-4 w-4" />
+    //           <span>{error}</span>
+    //         </Alert>
+    //       )}
+    
+    //       <div className="space-y-4">
+    //         <textarea
+    //           rows="6"
+    //           value={text}
+    //           onChange={(e) => setText(e.target.value)}
+    //           placeholder="Enter or paste text here..."
+    //           className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+    //         />
+    
+    //         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    //           <div className="space-y-4">
+    //             {text.length > 150 && (
+    //               <button
+    //                 onClick={handleSummarize}
+    //                 disabled={isProcessing}
+    //                 className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2"
+    //               >
+    //                 {isProcessing ? (
+    //                   <>
+    //                     <Loader2 className="h-4 w-4 animate-spin" />
+    //                     Processing... {progress > 0 ? `${progress}%` : ""}
+    //                   </>
+    //                 ) : (
+    //                   "Summarize"
+    //                 )}
+    //               </button>
+    //             )}
+    
+    //             {summary && (
+    //               <div className="p-4 bg-gray-50 rounded-lg">
+    //                 <h2 className="text-xl font-semibold mb-2">📌 Summary</h2>
+    //                 <p className="whitespace-pre-wrap">{summary}</p>
+    //               </div>
+    //             )}
+    //           </div>
+    
+    //           <div className="space-y-4">
+    //             <div className="space-y-2">
+    //               <label className="block font-semibold">Target Language:</label>
+    //               <select
+    //                 value={targetLanguage}
+    //                 onChange={(e) => setTargetLanguage(e.target.value)}
+    //                 className="w-full p-2 border rounded-lg"
+    //               >
+    //                 <option value="en">English</option>
+    //                 <option value="fr">French</option>
+    //                 <option value="es">Spanish</option>
+    //                 <option value="de">German</option>
+    //                 <option value="zh">Chinese</option>
+    //                 <option value="ja">Japanese</option>
+    //                 <option value="ko">Korean</option>
+    //                 <option value="ru">Russian</option>
+    //               </select>
+    //             </div>
+    
+    //             <button
+    //               onClick={handleTranslate}
+    //               disabled={isProcessing}
+    //               className="w-full bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 disabled:opacity-50 flex items-center justify-center gap-2"
+    //             >
+    //               {isProcessing ? (
+    //                 <>
+    //                   <Loader2 className="h-4 w-4 animate-spin" />
+    //                   Processing... {progress > 0 ? `${progress}%` : ""}
+    //                 </>
+    //               ) : (
+    //                 "Translate"
+    //               )}
+    //             </button>
+    
+    //             {language && (
+    //               <div className="p-4 bg-gray-50 rounded-lg">
+    //                 <h2 className="text-xl font-semibold mb-2">🌎 Detected Language</h2>
+    //                 <p>
+    //                   {language.detectedLanguage.toUpperCase()} 
+    //                   <span className="text-gray-500">
+    //                     (Confidence: {(language.confidence * 100).toFixed(1)}%)
+    //                   </span>
+    //                 </p>
+    //               </div>
+    //             )}
+    
+    //             {translation && (
+    //               <div className="p-4 bg-gray-50 rounded-lg">
+    //                 <h2 className="text-xl font-semibold mb-2">🌍 Translation</h2>
+    //                 <p className="whitespace-pre-wrap">{translation}</p>
+    //               </div>
+    //             )}
+    //           </div>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   );
+    // };
+    
+    // export default App;
+
+   
+    import React, { useState, useEffect, useRef, useCallback } from 'react';
+    import { Search, Send, Languages, Menu, X, Plus, Loader2 } from 'lucide-react';
+    
+    const STORAGE_KEY = 'translation_history';
     
     const App = () => {
-      const [text, setText] = useState("");
-      const [summary, setSummary] = useState("");
-      const [language, setLanguage] = useState(null);
-      const [translation, setTranslation] = useState("");
-      const [targetLanguage, setTargetLanguage] = useState("en");
+      const [inputText, setInputText] = useState('');
       const [isProcessing, setIsProcessing] = useState(false);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+      const [targetLanguage, setTargetLanguage] = useState('es');
+      const [detector, setDetector] = useState(null);
+      const [translator, setTranslator] = useState(null);
+      const [activeConversationId, setActiveConversationId] = useState(null);
+      const [conversations, setConversations] = useState([]);
       const [progress, setProgress] = useState(0);
-      const [error, setError] = useState(null);
     
-      // Check if AI APIs are available
-      const checkAISupport = useCallback(() => {
-        if (!('ai' in window)) {
-          throw new Error('Chrome AI APIs are not available in this browser.');
-        }
-        return true;
+      const messagesEndRef = useRef(null);
+      const sidebarRef = useRef(null);
+    
+      const availableLanguages = [
+        { code: 'es', name: 'Spanish' },
+        { code: 'fr', name: 'French' },
+        { code: 'de', name: 'German' },
+        { code: 'it', name: 'Italian' },
+        { code: 'pt', name: 'Portuguese' },
+        { code: 'zh', name: 'Chinese' },
+        { code: 'ja', name: 'Japanese' },
+        { code: 'ko', name: 'Korean' },
+        { code: 'ru', name: 'Russian' }
+      ];
+    
+      // Initialize AI APIs
+      useEffect(() => {
+        const initializeAI = async () => {
+          try {
+            if (!('ai' in window)) {
+              throw new Error('Chrome AI APIs are not available in this browser.');
+            }
+    
+            const progressMonitor = {
+              monitor: (m) => {
+                m.addEventListener('downloadprogress', (e) => {
+                  const progressPercent = Math.round((e.loaded / e.total) * 100);
+                  setProgress(progressPercent);
+                });
+              }
+            };
+    
+            const newDetector = await window.ai.languageDetector.create(progressMonitor);
+            await newDetector.ready;
+            setDetector(newDetector);
+    
+            console.log('AI APIs initialized successfully');
+          } catch (error) {
+            console.error('Error initializing AI APIs:', error);
+          }
+        };
+    
+        initializeAI();
       }, []);
     
-      // Generic progress monitor setup
-      const createProgressMonitor = (operation) => ({
-        monitor: (m) => {
-          m.addEventListener('downloadprogress', (e) => {
-            const progressPercent = Math.round((e.loaded / e.total) * 100);
-            setProgress(progressPercent);
-            console.log(`${operation} model downloading: ${progressPercent}%`);
-          });
+      // Load conversations from localStorage
+      useEffect(() => {
+        const savedConversations = localStorage.getItem(STORAGE_KEY);
+        if (savedConversations) {
+          const parsed = JSON.parse(savedConversations);
+          setConversations(parsed);
+          if (parsed.length > 0) {
+            setActiveConversationId(parsed[0].id);
+          }
         }
-      });
+      }, []);
     
-      // Error handler
-      const handleError = (error, operation) => {
-        console.error(`Error during ${operation}:`, error);
-        setError(`${operation} failed: ${error.message}`);
-        setIsProcessing(false);
-        setProgress(0);
-      };
+      // Save conversations to localStorage
+      useEffect(() => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+      }, [conversations]);
+    
+      // Scroll to bottom when messages change
+      useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [conversations]);
+    
+      // Click outside handler for sidebar
+      useEffect(() => {
+        const handleClickOutside = (event) => {
+          if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+            setIsSidebarOpen(false);
+          }
+        };
+    
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+      }, []);
     
       // Check language pair availability
       const checkLanguagePairAvailability = async (sourceLanguage, targetLanguage) => {
         try {
           const translatorCapabilities = await window.ai.translator.capabilities();
-          const availability = await translatorCapabilities.languagePairAvailable(sourceLanguage, targetLanguage);
+          const availability = await translatorCapabilities.languagePairAvailable(
+            sourceLanguage,
+            targetLanguage
+          );
           
           if (availability === 'no') {
             throw new Error(`Translation from ${sourceLanguage} to ${targetLanguage} is not supported`);
@@ -555,18 +888,46 @@
         }
       };
     
-      // Summarization function
-      const handleSummarize = async () => {
-        setIsProcessing(true);
-        setError(null);
-        setSummary("");
+      const createNewChat = () => {
+        const newConversation = {
+          id: Date.now(),
+          title: `${availableLanguages.find(lang => lang.code === targetLanguage)?.name} Translation`,
+          timestamp: new Date().toLocaleString(),
+          messages: [],
+          language: targetLanguage
+        };
+        
+        setConversations(prev => [newConversation, ...prev]);
+        setActiveConversationId(newConversation.id);
+        setIsSidebarOpen(false);
+      };
     
+      const activeConversation = conversations.find(conv => conv.id === activeConversationId);
+    
+      const addMessageToConversation = (conversationId, message) => {
+        setConversations(prev => prev.map(conv => {
+          if (conv.id === conversationId) {
+            return {
+              ...conv,
+              messages: [...conv.messages, message],
+              timestamp: new Date().toLocaleString()
+            };
+          }
+          return conv;
+        }));
+      };
+    
+      // Summarization function
+      const handleSummarize = async (text) => {
         try {
-          checkAISupport();
-          
           const summarizer = await window.ai.summarizer.create({
-            ...createProgressMonitor('Summarizer'),
-            sharedContext: "This is a scientific article",
+            monitor: (m) => {
+              m.addEventListener('downloadprogress', (e) => {
+                const progressPercent = Math.round((e.loaded / e.total) * 100);
+                setProgress(progressPercent);
+              });
+            },
+            sharedContext: "This is a text passage",
             type: "key-points",
             format: "markdown",
             length: "medium",
@@ -575,7 +936,7 @@
           await summarizer.ready;
     
           const resultStream = await summarizer.summarize(text, {
-            context: "This article is intended for a tech-savvy audience.",
+            context: "Summarizing the provided text.",
           });
     
           let result = "";
@@ -589,192 +950,334 @@
             previousChunk = chunk;
           }
     
-          setSummary(result);
+          return result;
         } catch (error) {
-          handleError(error, 'Summarization');
-        } finally {
-          setIsProcessing(false);
-          setProgress(0);
+          throw new Error(`Summarization failed: ${error.message}`);
         }
       };
     
-      // Language detection function
-      const detectLanguage = async (textToDetect) => {
-        try {
-          checkAISupport();
-          
-          const detector = await window.ai.languageDetector.create(createProgressMonitor('Language Detector'));
-          await detector.ready;
-          
-          const results = await detector.detect(textToDetect);
-          const topResult = results[0];
-          
-          if (!topResult) {
-            throw new Error('No language detected');
-          }
-          
-          return {
-            detectedLanguage: topResult.detectedLanguage,
-            confidence: topResult.confidence
-          };
-        } catch (error) {
-          throw new Error(`Language detection failed: ${error.message}`);
-        }
-      };
-    
-      // Translation function
-      const handleTranslate = async () => {
-        if (!text) {
-          setError('Please enter text to translate');
-          return;
-        }
+      async function handleSendMessage() {
+        if (!inputText.trim() || isProcessing || !activeConversationId) return;
     
         setIsProcessing(true);
-        setError(null);
-        setTranslation("");
+        
+        // Add user message
+        const userMessage = {
+          id: Date.now(),
+          text: inputText.trim(),
+          sender: 'user',
+          timestamp: new Date().toLocaleTimeString()
+        };
+        
+        addMessageToConversation(activeConversationId, userMessage);
+        setInputText('');
     
         try {
-          checkAISupport();
+          // Language detection
+          const detectingMessage = {
+            id: Date.now() + 1,
+            text: 'Detecting language...',
+            sender: 'ai',
+            timestamp: new Date().toLocaleTimeString(),
+            isTyping: true
+          };
+          
+          addMessageToConversation(activeConversationId, detectingMessage);
     
-          // Detect language first
-          const detectedLang = await detectLanguage(text);
-          setLanguage(detectedLang);
+          const detectionResult = await detector.detect(userMessage.text);
+          const detectedLanguage = detectionResult[0]?.detectedLanguage || 'unknown';
+          const confidence = detectionResult[0]?.confidence || 0;
     
-          // Check if translation is available
-          const availability = await checkLanguagePairAvailability(
-            detectedLang.detectedLanguage,
-            targetLanguage
-          );
+          // Update detecting message
+          setConversations(prev => prev.map(conv => {
+            if (conv.id === activeConversationId) {
+              return {
+                ...conv,
+                messages: conv.messages.map(msg => 
+                  msg.id === detectingMessage.id
+                    ? {
+                        ...msg,
+                        text: `Detected language: ${detectedLanguage.toUpperCase()} (Confidence: ${(confidence * 100).toFixed(1)}%)`,
+                        isTyping: false
+                      }
+                    : msg
+                )
+              };
+            }
+            return conv;
+          }));
     
+          // Check if summarization is needed (>150 characters)
+          if (userMessage.text.length > 150) {
+            const summarizingMessage = {
+              id: Date.now() + 2,
+              text: 'Generating summary...',
+              sender: 'ai',
+              timestamp: new Date().toLocaleTimeString(),
+              isTyping: true
+            };
+            
+            addMessageToConversation(activeConversationId, summarizingMessage);
+    
+            const summary = await handleSummarize(userMessage.text);
+            
+            setConversations(prev => prev.map(conv => {
+              if (conv.id === activeConversationId) {
+                return {
+                  ...conv,
+                  messages: conv.messages.map(msg =>
+                    msg.id === summarizingMessage.id
+                      ? {
+                          ...msg,
+                          text: `Summary:\n${summary}`,
+                          isTyping: false
+                        }
+                      : msg
+                  )
+                };
+              }
+              return conv;
+            }));
+          }
+    
+          // Translation
+          const translatingMessage = {
+            id: Date.now() + 3,
+            text: 'Translating...',
+            sender: 'ai',
+            timestamp: new Date().toLocaleTimeString(),
+            isTyping: true
+          };
+          
+          addMessageToConversation(activeConversationId, translatingMessage);
+    
+          // Check language pair availability
+          await checkLanguagePairAvailability(detectedLanguage, targetLanguage);
+    
+          // Create translator
           const translator = await window.ai.translator.create({
-            ...createProgressMonitor('Translator'),
-            sourceLanguage: detectedLang.detectedLanguage,
+            monitor: (m) => {
+              m.addEventListener('downloadprogress', (e) => {
+                const progressPercent = Math.round((e.loaded / e.total) * 100);
+                setProgress(progressPercent);
+              });
+            },
+            sourceLanguage: detectedLanguage,
             targetLanguage: targetLanguage,
           });
     
           await translator.ready;
-          const translatedText = await translator.translate(text);
-          setTranslation(translatedText);
+          const translatedText = await translator.translate(userMessage.text);
+    
+          // Update translating message
+          setConversations(prev => prev.map(conv => {
+            if (conv.id === activeConversationId) {
+              return {
+                ...conv,
+                messages: conv.messages.map(msg =>
+                  msg.id === translatingMessage.id
+                    ? {
+                        ...msg,
+                        text: `Translation (${detectedLanguage} → ${targetLanguage}):\n${translatedText}`,
+                        isTyping: false
+                      }
+                    : msg
+                )
+              };
+            }
+            return conv;
+          }));
+    
         } catch (error) {
-          handleError(error, 'Translation');
+          addMessageToConversation(activeConversationId, {
+            id: Date.now() + 4,
+            text: `Error: ${error.message}`,
+            sender: 'ai',
+            timestamp: new Date().toLocaleTimeString(),
+            isError: true
+          });
         } finally {
           setIsProcessing(false);
           setProgress(0);
         }
-      };
+      }
+    
+      const MessageBubble = ({ message }) => (
+        <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+          <div
+            className={`max-w-[85%] md:max-w-xl px-4 py-2 rounded-lg ${
+              message.sender === 'user'
+                ? 'bg-[#C75AF6] text-white'
+                : message.isError
+                ? 'bg-red-100 text-red-700'
+                : 'bg-gray-100 text-gray-800'
+            }`}
+          >
+            {message.isTyping ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+              </div>
+            ) : (
+              <>
+                <p className="break-words whitespace-pre-wrap">{message.text}</p>
+                <span className="text-xs opacity-50 mt-1 block">
+                  {message.timestamp}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      );
     
       return (
-        <div className="max-w-4xl mx-auto p-6 space-y-6">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            AI Text Processor
-          </h1>
-    
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <span>{error}</span>
-            </Alert>
+        <div className="flex h-screen bg-gray-100 relative">
+
+          {isSidebarOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-20 z-20 md:hidden" 
+                 onClick={() => setIsSidebarOpen(false)} />
           )}
     
-          <div className="space-y-4">
-            <textarea
-              rows="6"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Enter or paste text here..."
-              className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-    
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                {text.length > 150 && (
-                  <button
-                    onClick={handleSummarize}
-                    disabled={isProcessing}
-                    className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Processing... {progress > 0 ? `${progress}%` : ""}
-                      </>
-                    ) : (
-                      "Summarize"
-                    )}
-                  </button>
-                )}
-    
-                {summary && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h2 className="text-xl font-semibold mb-2">📌 Summary</h2>
-                    <p className="whitespace-pre-wrap">{summary}</p>
-                  </div>
-                )}
+          <div 
+            ref={sidebarRef}
+            className={`
+              fixed md:static
+              inset-y-0 left-0
+              w-72 md:w-80
+              bg-white
+              border-r border-gray-200
+              transform transition-transform duration-300 ease-in-out
+              ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+              z-30
+              flex flex-col
+            `}
+          >
+            <div className="p-4 border-b border-gray-200">
+              <button 
+                onClick={createNewChat}
+                className="w-full mb-4 p-2 flex items-center justify-center gap-2 bg-[#C75AF6] text-white rounded-lg hover:bg-[#C75AF6]/90 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                New Translation
+              </button>
+              
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={searchQuery} 
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search conversations"
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C75AF6]"
+                />
+                <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
               </div>
+            </div>
     
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="block font-semibold">Target Language:</label>
-                  <select
-                    value={targetLanguage}
-                    onChange={(e) => setTargetLanguage(e.target.value)}
-                    className="w-full p-2 border rounded-lg"
+            <div className="flex-1 overflow-y-auto">
+              {conversations
+                .filter(conv => conv.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map(conversation => (
+                  <div
+                    key={conversation.id}
+                    onClick={() => {
+                      setActiveConversationId(conversation.id);
+                      setIsSidebarOpen(false);
+                    }}
+                    className={`flex items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                      activeConversationId === conversation.id ? 'bg-[#C75AF6]/10' : ''
+                    }`}
                   >
-                    <option value="en">English</option>
-                    <option value="fr">French</option>
-                    <option value="es">Spanish</option>
-                    <option value="de">German</option>
-                    <option value="zh">Chinese</option>
-                    <option value="ja">Japanese</option>
-                    <option value="ko">Korean</option>
-                    <option value="ru">Russian</option>
-                  </select>
-                </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-800">{conversation.title}</h3>
+                      <p className="text-sm text-gray-500">{conversation.timestamp}</p>
+                    </div>
+                    <Languages className="text-gray-400 w-4 h-4" />
+                  </div>
+                ))}
+            </div>
+          </div>
     
+       {/* Main Content */}
+      <div className="flex-1 flex flex-col bg-white">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center p-4 border-b border-gray-200">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-1 hover:bg-gray-100 rounded-lg"
+          >
+            {isSidebarOpen ? (
+              <X className="w-6 h-6 text-gray-600" />
+            ) : (
+              <Menu className="w-6 h-6 text-gray-600" />
+            )}
+          </button>
+          <span className="ml-4 font-medium text-gray-800">
+            {activeConversation?.title || 'Select a conversation'}
+          </span>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {activeConversation?.messages.map(message => (
+            <MessageBubble key={message.id} message={message} />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="border-t border-gray-200 p-4">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-start space-x-2">
+              <textarea
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder={activeConversationId ? "Type text to translate..." : "Select a conversation to start"}
+                className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-y-auto max-h-40"
+                disabled={isProcessing || !activeConversationId}
+                rows="3"
+              />
+              <div className="flex flex-col space-y-2">
+                <select
+                  value={targetLanguage}
+                  onChange={(e) => setTargetLanguage(e.target.value)}
+                  className="w-32 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  {availableLanguages.map(lang => (
+                    <option key={lang.code} value={lang.code}>{lang.name}</option>
+                  ))}
+                </select>
                 <button
-                  onClick={handleTranslate}
-                  disabled={isProcessing}
-                  className="w-full bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 disabled:opacity-50 flex items-center justify-center gap-2"
+                  onClick={handleSendMessage}
+                  disabled={isProcessing || !inputText.trim() || !activeConversationId}
+                  className={`p-3 rounded-lg w-full flex justify-center items-center ${
+                    isProcessing || !inputText.trim() || !activeConversationId
+                      ? 'bg-gray-300 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  } text-white transition-colors`}
                 >
                   {isProcessing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Processing... {progress > 0 ? `${progress}%` : ""}
-                    </>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    "Translate"
+                    <>
+                      <Send className="w-5 h-5" />
+                      <span className="ml-2">Send</span>
+                    </>
                   )}
                 </button>
-    
-                {language && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h2 className="text-xl font-semibold mb-2">🌎 Detected Language</h2>
-                    <p>
-                      {language.detectedLanguage.toUpperCase()} 
-                      <span className="text-gray-500">
-                        (Confidence: {(language.confidence * 100).toFixed(1)}%)
-                      </span>
-                    </p>
-                  </div>
-                )}
-    
-                {translation && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h2 className="text-xl font-semibold mb-2">🌍 Translation</h2>
-                    <p className="whitespace-pre-wrap">{translation}</p>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         </div>
-      );
-    };
-    
-    export default App;
-    
-    
-    
-    
+      </div>
+    </div>
+      )
+    }
 
-    
+    export default App;
